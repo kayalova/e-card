@@ -6,8 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	//	_ "github.com/lib/pq" 
-	//	"database/sql"
+	"github.com/kayalova/e-card-catalog/controllers"
 )
 
 func init() {
@@ -17,10 +16,8 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello World!")
-	})
-
+	r := controllers.Router()
 	port := os.Getenv("SERVER_PORT")
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+port, r)
+
 }
