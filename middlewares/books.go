@@ -1,22 +1,31 @@
 package middlewares
 
 import (
+	"net/http"
+
 	"github.com/kayalova/e-card-catalog/models"
+	"github.com/kayalova/e-card-catalog/postgres"
 )
 
-//переместить
+// GetAllBooks ...
+func GetAllBooks(w http.ResponseWriter, r *http.Request) {}
+
+// FilterBooks ...
+func FilterBooks(w http.ResponseWriter, r *http.Request) {}
+
+/* ------------ Postgres requests ---------- */
 func getBooksAttachedToCard(id int) ([]models.Book, error) {
-	db := CreateConnection()
+	db := postgres.CreateConnection()
 	defer db.Close()
 
 	var books []models.Book
 	sqlStatement := `SELECT book_id FROM cards_books WHERE card_id=$1`
 	rows, err := db.Query(sqlStatement, id) // все записи с кард_ид = ид
-	var booksID []int
 	if err != nil {
 		return books, err
 	}
 
+	var booksID []int
 	var bookID int
 
 	for rows.Next() {
@@ -40,9 +49,8 @@ func getBooksAttachedToCard(id int) ([]models.Book, error) {
 	return books, nil
 }
 
-//переместить
 func getBook(id int) (models.Book, error) {
-	db := CreateConnection()
+	db := postgres.CreateConnection()
 	defer db.Close()
 
 	var book models.Book
@@ -54,7 +62,3 @@ func getBook(id int) (models.Book, error) {
 	}
 	return book, nil
 }
-
-func GetAllBooks() {}
-
-func FilterBooks() {}

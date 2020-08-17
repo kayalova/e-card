@@ -11,6 +11,7 @@ func Router() *mux.Router {
 	cardsSubrouter := r.PathPrefix("/api/cards").Subrouter()
 	authSubrouter := r.PathPrefix("/api/auth").Subrouter()
 	booksSubrouter := r.PathPrefix("/api/books").Subrouter()
+	schoolsSubrouter := r.PathPrefix("/api/schools").Subrouter()
 
 	// authentication checking
 	// http.Handle("/", middleware.IsAuthenticated(cardsSubrouter))
@@ -18,15 +19,19 @@ func Router() *mux.Router {
 	//auth
 	authSubrouter.HandleFunc("/signup", middlewares.SignUp).Methods("POST")
 	authSubrouter.HandleFunc("/signin", middlewares.SignIn).Methods("POST")
+	//school
+	schoolsSubrouter.HandleFunc("/getAll", middlewares.GetAllSchools).Methods("GET")
 	//books
-	booksSubrouter.HandlerFunc("/getAll", middlewares.GetAllBooks).Methods("GET")
-	booksSubrouter.HandlerFunc("/filter", middlewares.FilterBooks).Methods("GET")
+	booksSubrouter.HandleFunc("/getAll", middlewares.GetAllBooks).Methods("GET")
+	booksSubrouter.HandleFunc("/filter", middlewares.FilterBooks).Methods("GET")
 	//cards
 	cardsSubrouter.HandleFunc("/create", middlewares.CreateCard).Methods("POST")
 	cardsSubrouter.HandleFunc("/filter", middlewares.FilterCards).Methods("GET")
 	cardsSubrouter.HandleFunc("/edit/{id}", middlewares.EditCard).Methods("PUT")
 	cardsSubrouter.HandleFunc("/getAll", middlewares.GetAllCards).Methods("GET")
 	cardsSubrouter.HandleFunc("/getOne/{id}", middlewares.GetOneCard).Methods("GET")
+	cardsSubrouter.HandleFunc("/attachBook/{id}", middlewares.AttachToCard).Methods("GET")
+	cardsSubrouter.HandleFunc("/detachBook/{id}", middlewares.DetachFromCard).Methods("GET")
 	cardsSubrouter.HandleFunc("/delete/{id}", middlewares.DeleteOneCard).Methods("DELETE")
 
 	return r
