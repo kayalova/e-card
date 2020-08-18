@@ -10,27 +10,7 @@ import (
 	"github.com/kayalova/e-card-catalog/models"
 )
 
-// PrepareDBfilters ...
-func PrepareDBfilters(filters url.Values) map[string]interface{} {
-	mapFilters := make(map[string]interface{})
-	for k, v := range filters {
-		mapFilters[k] = v[0]
-	}
-
-	return mapFilters
-}
-
-// BuildSQLStatement returns sql statement string - NOT USED
-func BuildSQLStatement(m *map[string]interface{}, tableName string) string {
-	sqlStatement := fmt.Sprintf(`SELECT * FROM %v WHERE `, tableName)
-	for k, v := range *m {
-		sqlStatement += fmt.Sprintf(`%v=%v AND `, k, v)
-	}
-
-	return strings.ReplaceAll(sqlStatement[:len(sqlStatement)-4], `"`, `'`)
-}
-
-// Error ...
+// Error handler for all errors' cases
 func Error(msg string, httpCode int, w http.ResponseWriter) {
 	var response models.Response = models.Response{
 		Message: msg,
@@ -45,45 +25,32 @@ func Error(msg string, httpCode int, w http.ResponseWriter) {
 	}
 }
 
-// CreateCardsSQLStatement ...
-func CreateCardsSQLStatement(filters *map[string]interface{}) string {
-	sqlStatement := `SELECT
-	cards.id card_id,
-	cards.name card_name,
-	cards.lastname card_lastname,
-	cards.surname card_surname,
-	cards.phone card_phone,
-	schools.name school_name,
-	books.id book_id,
-	books.name book_name,
-	books.author book_author,
-	books.book_id book_ownID
-  FROM
-	cards
-  LEFT JOIN schools
-	ON schools.id = cards.school_id
-  LEFT JOIN cards_books
-	ON cards_books.card_id = cards.id
-  LEFT JOIN books
-	ON books.id = cards_books.book_id;
-	`
+// PrepareDBfilters returns map[query_paramName]query_paramValue
+func PrepareDBfilters(filters url.Values) map[string]interface{} {
+	mapFilters := make(map[string]interface{})
+	for k, v := range filters {
+		mapFilters[k] = v[0]
+	}
 
+	return mapFilters
+}
+
+// FinishUpSQLStatement builds sql query string depends on PrepareDBfilters map
+func FinishUpSQLStatement(sqlStatement string, filters *map[string]interface{}) string {
 	if len(*filters) == 0 {
 		return sqlStatement
 	}
 
-	sqlStatement += `WHERE `
+	sqlStatement += ` WHERE `
 	for k, v := range *filters {
 		sqlStatement += fmt.Sprintf(`%v=%v AND `, k, v)
 	}
 
 	return strings.ReplaceAll(sqlStatement[:len(sqlStatement)-4], `"`, `'`)
-
 }
 
-// RemoveDuplicates ...
-func RemoveDuplicates(records []models.CommonJSON) map[int64]map[string]interface{} {
-
+// RemoveCardDuplicates removes all cards' duplicates
+func RemoveCardDuplicates(records []models.CommonJSON) map[int64]map[string]interface{} {
 	setID := make(map[int64]bool)
 	result := make(map[int64]map[string]interface{})
 

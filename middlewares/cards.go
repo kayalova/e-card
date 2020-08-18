@@ -3,15 +3,15 @@ package middlewares
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/kayalova/e-card-catalog/constants"
 
 	"github.com/gorilla/mux"
 	"github.com/kayalova/e-card-catalog/helpers"
 	"github.com/kayalova/e-card-catalog/models"
 	"github.com/kayalova/e-card-catalog/postgres"
-	_ "github.com/lib/pq"
 )
 
 // CreateCard creates a student card - WORKS
@@ -37,19 +37,15 @@ func CreateCard(w http.ResponseWriter, r *http.Request) {
 
 // FilterCards filters students' cards
 func FilterCards(w http.ResponseWriter, r *http.Request) {
-
-	filters := r.URL.Query()
-	cardMap := helpers.PrepareDBfilters(filters)
-	sqlStatement := helpers.CreateCardsSQLStatement(&cardMap)
-
-	cards, err := filterCards(sqlStatement)
+	cardMap := helpers.PrepareDBfilters(r.URL.Query())
+	sqlStatement := helpers.FinishUpSQLStatement(constants.SQLStatements["cards"], &cardMap)
+	cards, err := filterAllRecords(sqlStatement)
 	if err != nil {
 		helpers.Error("Unable to get cards", http.StatusConflict, w)
 		return
 	}
 
-	response := helpers.RemoveDuplicates(cards)
-
+	response := helpers.RemoveCardDuplicates(cards)
 	JSONresponse, err := json.Marshal(response)
 	if err != nil {
 		helpers.Error("Unable to get cards", http.StatusConflict, w)
@@ -329,53 +325,3 @@ func detachBook(cardID, bookID int) error {
 
 	return nil
 }
-
-func filterCards(sqlStatement string) ([]models.CommonJSON, error) {
-	db := postgres.CreateConnection()
-	defer db.Close()
-
-	var records []models.CommonJSON
-
-	rows, err := db.Query(sqlStatement)
-	if err != nil {
-		log.Println(err)
-		return records, err
-	}
-
-	for rows.Next() {
-
-		var complete models.CommonJSON
-		err = rows.Scan(&complete.Card.ID, &complete.Card.Name, &complete.Card.Lastname, &complete.Card.Surname, &complete.Card.Phone, &complete.School.Name, &complete.Book.ID, &complete.Book.Name, &complete.Book.Author, &complete.Book.BookId)
-		if err != nil {
-			log.Println(err)
-		}
-		records = append(records, complete)
-	}
-
-	return records, nil
-
-}
-
-/*
-
-{"11":
-	{"
-		Books":[
-			{"ID":1,"Name":"Триумфальная арка","Author":"Эрих Мария Ремарк","BookId":22061898},
-			{"ID":2,"Name":"Черный обелиск","Author":"Эрих Мария Ремарк","BookId":0}
-		],
-		"Card":{"ID":11,"Name":"Зарема","Lastname":"Гаджиевна","Surname":"Каялова","Phone":"79882757053","SchoolId":0},
-		"School":{"ID":0,"Name":"ГБОУ РД \"РМЛИ ДОД\""}
-	},
-"12":
-	{
-		"Books":
-			[
-				{"ID":0,"Name":"","Author":"","BookId":0}
-			],
-		"Card":{"ID":12,"Name":"Рустам","Lastname":"Самурович","Surname":"Магомед-касумов","Phone":"чтототам","SchoolId":0},
-		"School":{"ID":0,"Name":"МБОУ «Гимназия №1» имени С.М.Омарова"}
-	}
-}
-
-*/

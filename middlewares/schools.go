@@ -5,9 +5,8 @@ import (
 	"net/http"
 
 	"github.com/kayalova/e-card-catalog/helpers"
-	"github.com/kayalova/e-card-catalog/postgres"
-
 	"github.com/kayalova/e-card-catalog/models"
+	"github.com/kayalova/e-card-catalog/postgres"
 )
 
 // GetAllSchools return all schools

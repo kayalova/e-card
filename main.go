@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kayalova/e-card-catalog/controllers"
+	_ "github.com/lib/pq"
 )
 
 func init() {
