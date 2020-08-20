@@ -3,11 +3,13 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/kayalova/e-card-catalog/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Error handler for all errors' cases
@@ -23,6 +25,28 @@ func Error(msg string, httpCode int, w http.ResponseWriter) {
 		w.WriteHeader(httpCode)
 		w.Write(responseJSON)
 	}
+}
+
+// CheckPasswordHash ...
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+// IsValidUser ...
+func IsValidUser(user *models.User) bool {
+	return !IsEmptyString(user.Email) &&
+		!IsEmptyString(user.Name) &&
+		!IsEmptyString(user.Password)
+}
+
+// HashAndSalt ...
+func HashAndSalt(password []byte) string {
+	hash, err := bcrypt.GenerateFromPassword(password, bcrypt.MinCost)
+	if err != nil {
+		log.Println(err)
+	}
+	return string(hash)
 }
 
 // PrepareDBfilters returns map[query_paramName]query_paramValue
@@ -82,4 +106,9 @@ func RemoveCardDuplicates(records []models.CommonJSON) map[int64]map[string]inte
 // IsEmptyString ...
 func IsEmptyString(s string) bool {
 	return strings.TrimSpace(s) == ""
+}
+
+// ConvertToBytes converts string into []byte
+func ConvertToBytes(s string) []byte {
+	return []byte(s)
 }

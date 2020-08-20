@@ -5,6 +5,7 @@ import (
 	"github.com/kayalova/e-card-catalog/middlewares"
 )
 
+// Router ...
 func Router() *mux.Router {
 	r := mux.NewRouter()
 
@@ -13,8 +14,10 @@ func Router() *mux.Router {
 	booksSubrouter := r.PathPrefix("/api/books").Subrouter()
 	schoolsSubrouter := r.PathPrefix("/api/schools").Subrouter()
 
-	// authentication checking
-	// http.Handle("/", middleware.IsAuthenticated(cardsSubrouter))
+	// authentication check
+	cardsSubrouter.Use(middlewares.IsAuthorized)
+	booksSubrouter.Use(middlewares.IsAuthorized)
+	schoolsSubrouter.Use(middlewares.IsAuthorized)
 
 	//auth
 	authSubrouter.HandleFunc("/signup", middlewares.SignUp).Methods("POST")
