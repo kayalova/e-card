@@ -1,6 +1,14 @@
 package constants
 
 var SQLStatements = map[string]string{
+	"booksForCard": `SELECT 
+						books.id, books.name, books.author, books.book_id
+					FROM cards
+					INNER JOIN cards_books
+						ON cards_books.card_id=cards.id
+					INNER JOIN books
+						ON cards_books.book_id=books.id
+					WHERE cards.id=$1`,
 	"books": `SELECT
 				cards.id card_id,
 				cards.name card_name,

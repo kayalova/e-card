@@ -9,7 +9,7 @@ import (
 	"github.com/kayalova/e-card-catalog/postgres"
 )
 
-// GetAllSchools return all schools
+// GetAllSchools returns all schools
 func GetAllSchools(w http.ResponseWriter, r *http.Request) {
 	schools, err := getAllSchools()
 

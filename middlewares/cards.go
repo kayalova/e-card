@@ -14,7 +14,7 @@ import (
 	"github.com/kayalova/e-card-catalog/postgres"
 )
 
-// CreateCard creates a student card - WORKS
+// CreateCard creates a student card
 func CreateCard(w http.ResponseWriter, r *http.Request) {
 	var card models.Card
 
@@ -56,7 +56,7 @@ func FilterCards(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// EditCard updates student's card - WORKS
+// EditCard updates student's card
 func EditCard(w http.ResponseWriter, r *http.Request) {
 	var card models.Card
 	vars := mux.Vars(r)
@@ -78,61 +78,45 @@ func EditCard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GetAllCards returns all the sudents' cards - WORKS
+// GetAllCards returns all the sudents' cards
 func GetAllCards(w http.ResponseWriter, r *http.Request) {
-	cards, err := getCards()
+	cards, err := getCardsDetails()
 	if err != nil {
 		helpers.Error("Unable to get cards", http.StatusInternalServerError, w)
 		return
 	}
 
-	response := map[string][]models.Card{
-		"cards": cards,
-	}
-
-	// TODO: уточнить
-	JSONresponse, err := json.Marshal(response)
+	JSONresponse := helpers.RemoveCardDuplicates(cards)
+	response, err := json.Marshal(JSONresponse)
 	if err != nil {
 		helpers.Error("Unable to get cards", http.StatusInternalServerError, w)
 		return
 	}
 
-	w.Write(JSONresponse)
+	w.Write(response)
 }
 
-// GetOneCard returns a single student's card - WORKS
+// GetOneCard returns a single student's card
 func GetOneCard(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 
-	card, err := getCard(id)
+	records, err := getOneCardDetails(id)
 	if err != nil {
 		helpers.Error("Unable to get the card", http.StatusInternalServerError, w)
 		return
 	}
 
-	books, err := getBooksAttachedToCard(id)
+	JSONresponse := helpers.RemoveCardDuplicates(records)
+	response, err := json.Marshal(JSONresponse)
 	if err != nil {
 		helpers.Error("Unable to get the card", http.StatusInternalServerError, w)
 		return
 	}
-
-	JSONResponse := map[string]interface{}{
-		"card":  card,
-		"books": books,
-	}
-
-	response, err := json.Marshal(JSONResponse)
-	if err != nil {
-		helpers.Error("Unable to get the card", http.StatusInternalServerError, w)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
-
 }
 
-// DeleteOneCard deletes student's card _ WORKS
+// DeleteOneCard deletes student's card
 func DeleteOneCard(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -152,7 +136,7 @@ func DeleteOneCard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// AttachToCard atteches book to card - WORKS
+// AttachToCard atteches book to card
 func AttachToCard(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	cardID, err := strconv.Atoi(idStr)
@@ -179,7 +163,7 @@ func AttachToCard(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// DetachFromCard detaches book from card - WORKS
+// DetachFromCard detaches book from card
 func DetachFromCard(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	cardID, err := strconv.Atoi(idStr)
@@ -227,45 +211,30 @@ func updateCard(id int, card models.Card) error {
 	return nil
 }
 
-func getCards() ([]models.Card, error) {
+func getCardsDetails() ([]models.CommonJSON, error) {
 	db := postgres.CreateConnection()
 	defer db.Close()
 
-	var cards []models.Card
-
-	sqlStatement := `SELECT * FROM cards`
-	rows, err := db.Query(sqlStatement)
+	sqlStatement := constants.SQLStatements["cards"]
+	records, err := filterAllRecords(sqlStatement)
 	if err != nil {
-		return cards, err
+		return make([]models.CommonJSON, 0, 0), err
 	}
 
-	var card models.Card
-	for rows.Next() {
-		err = rows.Scan(&card.ID, &card.Name, &card.Lastname, &card.Surname, &card.Phone, &card.SchoolId)
-		if err != nil {
-			return cards, err
-		}
-
-		cards = append(cards, card)
-	}
-
-	return cards, nil
+	return records, nil
 }
 
-func getCard(id int) (models.Card, error) {
-	db := postgres.CreateConnection()
-	defer db.Close()
+func getOneCardDetails(id int) ([]models.CommonJSON, error) {
 
-	var card models.Card
+	sqlStatement := constants.SQLStatements["cards"]
+	sqlStatement += fmt.Sprintf(` WHERE cards.id=%v`, id)
+	records, err := filterAllRecords(sqlStatement)
 
-	sqlStatement := `SELECT * FROM cards WHERE id=$1`
-	row := db.QueryRow(sqlStatement, id)
-	err := row.Scan(&card.ID, &card.Name, &card.Lastname, &card.Surname, &card.SchoolId, &card.Phone)
 	if err != nil {
-		return card, err
+		return make([]models.CommonJSON, 0, 0), err
 	}
 
-	return card, nil
+	return records, nil
 }
 
 func insertCard(card *models.Card) error {
