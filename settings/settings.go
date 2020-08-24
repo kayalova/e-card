@@ -1,7 +1,8 @@
-package postgres
+package settings
 
 import (
 	"database/sql"
+	"os"
 )
 
 //CreateConnection ...
@@ -15,4 +16,13 @@ func CreateConnection() *sql.DB {
 
 	return db
 
+}
+
+// GetEnvKey ...
+func GetEnvKey(key, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); !exists {
+		return value
+	}
+
+	return defaultVal
 }

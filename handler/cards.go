@@ -1,4 +1,4 @@
-package middlewares
+package handler
 
 import (
 	"encoding/json"
@@ -9,25 +9,25 @@ import (
 	"github.com/kayalova/e-card-catalog/constants"
 
 	"github.com/gorilla/mux"
-	"github.com/kayalova/e-card-catalog/helpers"
-	"github.com/kayalova/e-card-catalog/models"
-	"github.com/kayalova/e-card-catalog/postgres"
+	"github.com/kayalova/e-card-catalog/helper"
+	"github.com/kayalova/e-card-catalog/model"
+	"github.com/kayalova/e-card-catalog/settings"
 )
 
 // CreateCard creates a student card
 func CreateCard(w http.ResponseWriter, r *http.Request) {
-	var card models.Card
+	var card model.Card
 
 	err := json.NewDecoder(r.Body).Decode(&card)
 	if err != nil {
-		helpers.Error("Unable to create the card", http.StatusConflict, w)
+		helper.Error("Unable to create the card", http.StatusConflict, w)
 		return
 	}
 
 	err = insertCard(&card)
 
 	if err != nil {
-		helpers.Error("Unable to create the card", http.StatusConflict, w)
+		helper.Error("Unable to create the card", http.StatusConflict, w)
 		return
 	}
 
@@ -37,18 +37,18 @@ func CreateCard(w http.ResponseWriter, r *http.Request) {
 
 // FilterCards filters students' cards
 func FilterCards(w http.ResponseWriter, r *http.Request) {
-	cardMap := helpers.PrepareDBfilters(r.URL.Query())
-	sqlStatement := helpers.FinishUpSQLStatement(constants.SQLStatements["cards"], &cardMap)
+	cardMap := helper.PrepareDBfilters(r.URL.Query())
+	sqlStatement := helper.FinishUpSQLStatement(constants.SQLStatements["cards"], &cardMap)
 	cards, err := filterAllRecords(sqlStatement)
 	if err != nil {
-		helpers.Error("Unable to get cards", http.StatusConflict, w)
+		helper.Error("Unable to get cards", http.StatusConflict, w)
 		return
 	}
 
-	response := helpers.RemoveCardDuplicates(cards)
+	response := helper.RemoveCardDuplicates(cards)
 	JSONresponse, err := json.Marshal(response)
 	if err != nil {
-		helpers.Error("Unable to get cards", http.StatusConflict, w)
+		helper.Error("Unable to get cards", http.StatusConflict, w)
 		return
 	}
 
@@ -58,20 +58,20 @@ func FilterCards(w http.ResponseWriter, r *http.Request) {
 
 // EditCard updates student's card
 func EditCard(w http.ResponseWriter, r *http.Request) {
-	var card models.Card
+	var card model.Card
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 
 	err = json.NewDecoder(r.Body).Decode(&card)
 	if err != nil {
-		helpers.Error("Unable to update the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to update the card", http.StatusInternalServerError, w)
 		return
 
 	}
 
 	err = updateCard(id, card)
 	if err != nil {
-		helpers.Error("Unable to update the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to update the card", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -82,14 +82,14 @@ func EditCard(w http.ResponseWriter, r *http.Request) {
 func GetAllCards(w http.ResponseWriter, r *http.Request) {
 	cards, err := getCardsDetails()
 	if err != nil {
-		helpers.Error("Unable to get cards", http.StatusInternalServerError, w)
+		helper.Error("Unable to get cards", http.StatusInternalServerError, w)
 		return
 	}
 
-	JSONresponse := helpers.RemoveCardDuplicates(cards)
+	JSONresponse := helper.RemoveCardDuplicates(cards)
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {
-		helpers.Error("Unable to get cards", http.StatusInternalServerError, w)
+		helper.Error("Unable to get cards", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -103,14 +103,14 @@ func GetOneCard(w http.ResponseWriter, r *http.Request) {
 
 	records, err := getOneCardDetails(id)
 	if err != nil {
-		helpers.Error("Unable to get the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to get the card", http.StatusInternalServerError, w)
 		return
 	}
 
-	JSONresponse := helpers.RemoveCardDuplicates(records)
+	JSONresponse := helper.RemoveCardDuplicates(records)
 	response, err := json.Marshal(JSONresponse)
 	if err != nil {
-		helpers.Error("Unable to get the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to get the card", http.StatusInternalServerError, w)
 		return
 	}
 	w.Write(response)
@@ -122,14 +122,14 @@ func DeleteOneCard(w http.ResponseWriter, r *http.Request) {
 	idStr := vars["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		helpers.Error("Unable to delete the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to delete the card", http.StatusInternalServerError, w)
 		return
 	}
 
 	rowsCount, err := deleteCard(id)
 
 	if err != nil || rowsCount == 0 {
-		helpers.Error("Unable to delete the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to delete the card", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -141,21 +141,21 @@ func AttachToCard(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	cardID, err := strconv.Atoi(idStr)
 	if err != nil {
-		helpers.Error("Unable to attach book to the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to attach book to the card", http.StatusInternalServerError, w)
 		return
 	}
 
 	bookIDStr := r.URL.Query()["id"][0]
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
-		helpers.Error("Unable to attach book to the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to attach book to the card", http.StatusInternalServerError, w)
 		return
 	}
 
 	err = attachBook(cardID, bookID)
 
 	if err != nil {
-		helpers.Error("Unable to attach book to the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to attach book to the card", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -168,21 +168,21 @@ func DetachFromCard(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	cardID, err := strconv.Atoi(idStr)
 	if err != nil {
-		helpers.Error("Unable to detach book from the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to detach book from the card", http.StatusInternalServerError, w)
 		return
 	}
 
 	bookIDStr := r.URL.Query()["id"][0]
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
-		helpers.Error("Unable to detach book from the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to detach book from the card", http.StatusInternalServerError, w)
 		return
 	}
 
 	err = detachBook(cardID, bookID)
 
 	if err != nil {
-		helpers.Error("Unable to detach book from the card", http.StatusInternalServerError, w)
+		helper.Error("Unable to detach book from the card", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -190,8 +190,8 @@ func DetachFromCard(w http.ResponseWriter, r *http.Request) {
 }
 
 /* ------------ Postgres requests ---------- */
-func updateCard(id int, card models.Card) error {
-	db := postgres.CreateConnection()
+func updateCard(id int, card model.Card) error {
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	sqlStatement := `UPDATE cards 
@@ -211,34 +211,34 @@ func updateCard(id int, card models.Card) error {
 	return nil
 }
 
-func getCardsDetails() ([]models.CommonJSON, error) {
-	db := postgres.CreateConnection()
+func getCardsDetails() ([]model.CommonJSON, error) {
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	sqlStatement := constants.SQLStatements["cards"]
 	records, err := filterAllRecords(sqlStatement)
 	if err != nil {
-		return make([]models.CommonJSON, 0, 0), err
+		return make([]model.CommonJSON, 0, 0), err
 	}
 
 	return records, nil
 }
 
-func getOneCardDetails(id int) ([]models.CommonJSON, error) {
+func getOneCardDetails(id int) ([]model.CommonJSON, error) {
 
 	sqlStatement := constants.SQLStatements["cards"]
 	sqlStatement += fmt.Sprintf(` WHERE cards.id=%v`, id)
 	records, err := filterAllRecords(sqlStatement)
 
 	if err != nil {
-		return make([]models.CommonJSON, 0, 0), err
+		return make([]model.CommonJSON, 0, 0), err
 	}
 
 	return records, nil
 }
 
-func insertCard(card *models.Card) error {
-	db := postgres.CreateConnection()
+func insertCard(card *model.Card) error {
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	sqlStatement := `INSERT INTO cards(name, lastname, surname, phone, school_id) VALUES ($1, $2, $3, $4, $5)`
@@ -252,7 +252,7 @@ func insertCard(card *models.Card) error {
 }
 
 func deleteCard(id int) (rowsCount int64, err error) {
-	db := postgres.CreateConnection()
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	sqlStatement := `DELETE FROM cards WHERE id=$1`
@@ -270,7 +270,7 @@ func deleteCard(id int) (rowsCount int64, err error) {
 }
 
 func attachBook(cardID, bookID int) error {
-	db := postgres.CreateConnection()
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	sqlStatement := `INSERT INTO cards_books(card_id, book_id) VALUES($1, $2)`
@@ -283,7 +283,7 @@ func attachBook(cardID, bookID int) error {
 }
 
 func detachBook(cardID, bookID int) error {
-	db := postgres.CreateConnection()
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	sqlStatement := `DELETE FROM cards_books WHERE card_id=$1 AND book_id=$2`

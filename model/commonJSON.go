@@ -1,4 +1,4 @@
-package models
+package model
 
 type CommonJSON struct {
 	Card   Card

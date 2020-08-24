@@ -1,4 +1,4 @@
-package middlewares
+package handler
 
 import (
 	"encoding/json"
@@ -6,22 +6,22 @@ import (
 	"net/http"
 
 	"github.com/kayalova/e-card-catalog/constants"
-	"github.com/kayalova/e-card-catalog/helpers"
-	"github.com/kayalova/e-card-catalog/models"
-	"github.com/kayalova/e-card-catalog/postgres"
+	"github.com/kayalova/e-card-catalog/helper"
+	"github.com/kayalova/e-card-catalog/model"
+	"github.com/kayalova/e-card-catalog/settings"
 )
 
 // GetAllBooks returns all books
 func GetAllBooks(w http.ResponseWriter, r *http.Request) {
 	books, err := getBooks()
 	if err != nil {
-		helpers.Error("Unable to get books", http.StatusInternalServerError, w)
+		helper.Error("Unable to get books", http.StatusInternalServerError, w)
 		return
 	}
 
 	response, err := json.Marshal(books)
 	if err != nil {
-		helpers.Error("Unable to get books", http.StatusInternalServerError, w)
+		helper.Error("Unable to get books", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -30,18 +30,18 @@ func GetAllBooks(w http.ResponseWriter, r *http.Request) {
 
 // FilterBooks returns books depend on query params
 func FilterBooks(w http.ResponseWriter, r *http.Request) {
-	booksFilters := helpers.PrepareDBfilters(r.URL.Query())
-	sqlStatement := helpers.FinishUpSQLStatement(constants.SQLStatements["books"], &booksFilters)
+	booksFilters := helper.PrepareDBfilters(r.URL.Query())
+	sqlStatement := helper.FinishUpSQLStatement(constants.SQLStatements["books"], &booksFilters)
 	booksAndCards, err := filterAllRecords(sqlStatement)
 	if err != nil {
-		helpers.Error("Unable to get books1", http.StatusInternalServerError, w)
+		helper.Error("Unable to get books1", http.StatusInternalServerError, w)
 		return
 	}
 
-	response := helpers.RemoveCardDuplicates(booksAndCards)
+	response := helper.RemoveCardDuplicates(booksAndCards)
 	JSONresponse, err := json.Marshal(response)
 	if err != nil {
-		helpers.Error("Unable to get cards", http.StatusConflict, w)
+		helper.Error("Unable to get cards", http.StatusConflict, w)
 		return
 	}
 
@@ -50,11 +50,11 @@ func FilterBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 /* ------------ Postgres requests ---------- */
-func getBooks() ([]models.Book, error) {
-	db := postgres.CreateConnection()
+func getBooks() ([]model.Book, error) {
+	db := settings.CreateConnection()
 	defer db.Close()
 
-	var books []models.Book
+	var books []model.Book
 	sqlStatement := `SELECT * FROM books`
 	rows, err := db.Query(sqlStatement)
 	if err != nil {
@@ -62,7 +62,7 @@ func getBooks() ([]models.Book, error) {
 	}
 
 	for rows.Next() {
-		var book models.Book
+		var book model.Book
 		err = rows.Scan(&book.ID, &book.Name, &book.Author, &book.BookId)
 		if err != nil {
 			return books, err
@@ -73,13 +73,13 @@ func getBooks() ([]models.Book, error) {
 	return books, nil
 }
 
-func filterAllRecords(sqlStatement string) ([]models.CommonJSON, error) {
-	db := postgres.CreateConnection()
+func filterAllRecords(sqlStatement string) ([]model.CommonJSON, error) {
+	db := settings.CreateConnection()
 	defer db.Close()
 
 	rows, err := db.Query(sqlStatement)
 
-	var records []models.CommonJSON
+	var records []model.CommonJSON
 	if err != nil {
 		log.Println(err)
 		return records, err
@@ -87,7 +87,7 @@ func filterAllRecords(sqlStatement string) ([]models.CommonJSON, error) {
 
 	for rows.Next() {
 
-		var complete models.CommonJSON
+		var complete model.CommonJSON
 		err = rows.Scan(&complete.Card.ID, &complete.Card.Name, &complete.Card.Lastname, &complete.Card.Surname, &complete.Card.Phone, &complete.School.ID, &complete.School.Name, &complete.Book.ID, &complete.Book.Name, &complete.Book.Author, &complete.Book.BookId)
 		if err != nil {
 			log.Println(err)

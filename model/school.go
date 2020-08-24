@@ -1,4 +1,4 @@
-package models
+package model
 
 type School struct {
 	ID   int64

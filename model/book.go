@@ -1,4 +1,4 @@
-package models
+package model
 
 type Book struct {
 	ID     int64  `json:id`

@@ -1,4 +1,4 @@
-package helpers
+package helper
 
 import (
 	"encoding/json"
@@ -8,13 +8,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kayalova/e-card-catalog/models"
+	"github.com/kayalova/e-card-catalog/model"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // Error handler for all errors' cases
 func Error(msg string, httpCode int, w http.ResponseWriter) {
-	var response models.Response = models.Response{
+	var response model.Response = model.Response{
 		Message: msg,
 	}
 
@@ -34,7 +34,7 @@ func CheckPasswordHash(password, hash string) bool {
 }
 
 // IsValidUser ...
-func IsValidUser(user *models.User) bool {
+func IsValidUser(user *model.User) bool {
 	return !IsEmptyString(user.Email) &&
 		!IsEmptyString(user.Name) &&
 		!IsEmptyString(user.Password)
@@ -74,7 +74,7 @@ func FinishUpSQLStatement(sqlStatement string, filters *map[string]interface{}) 
 }
 
 // RemoveCardDuplicates removes all cards' duplicates
-func RemoveCardDuplicates(records []models.CommonJSON) map[int64]map[string]interface{} {
+func RemoveCardDuplicates(records []model.CommonJSON) map[int64]map[string]interface{} {
 	setID := make(map[int64]bool)
 	result := make(map[int64]map[string]interface{})
 

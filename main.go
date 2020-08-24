@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/kayalova/e-card-catalog/controllers"
+	"github.com/kayalova/e-card-catalog/controller"
+	"github.com/kayalova/e-card-catalog/settings"
 	_ "github.com/lib/pq"
 )
 
@@ -17,8 +17,7 @@ func init() {
 }
 
 func main() {
-	r := controllers.Router()
-	port := os.Getenv("SERVER_PORT")
+	r := controller.Router()
+	port := settings.GetEnvKey("SERVER_PORT", "8080")
 	http.ListenAndServe(":"+port, r)
-
 }
